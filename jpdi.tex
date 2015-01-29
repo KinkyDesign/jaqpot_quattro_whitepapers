@@ -154,57 +154,33 @@ create a dataset for prediction.
 \section{Prediction with JPDI-compliant WSs}
 
 
-\chapter{Datasets from Studies}
+\section{Registration of new algorithms}
+New algorithms need to be \textit{registered} on JAQPOT Quattro
+so that JAQPOT knows how to invoke them. This is specified in 
+a very simple manner on registration. JPDI algorithms
+are registered by a POST method applied on \texttt{/algorithm}.
 
-\section{Introduction}
-JAQPOT Quattro is a essentially a QSAR model training/prediction software and, 
-as such, it should accept a properly formed dataset as input to all 
-such calculations. In old OpenTox times, the standard process of training 
-and prediction was as follows (short overview of what we already know):\\\\
-
-\noindent Training flow:
-\begin{enumerate}
- \item 	User consumes a Jaqpot algorithm resource and provides a 
-	specific Dataset from a Dataset service. Also selects a feature to be 
-	predicted. (Optionally provides a PMML file to specify a multitude of 
-	transformations to be applied to the dataset before training)
-\item  Jaqpot responds to the user with a created Task for the required procedure.
-\item   Jaqpot downloads the dataset in a properly formed manner.
- \item  Jaqpot does preprocessing on the dataset, as dictated by the algorithm and/or the PMML file the user provided.
- \item  Jaqpot applies the selected algorithm on the dataset (excluding the prediction feature) and trains a Model. 
- \item  Jaqpot creates a new Feature in a Feature service in order to store the results of the Model when the latter is to be used for training purposes. The URI of that new Feature is saved in the Model.
- \item  Jaqpot persists the model in the database and injects a new URI created for that model in the procedure’s Task.
- \item  User consumes the given Task to acquire the URI of the created Model.
-\end{enumerate}
-
- 
- 
- 
-\noindent Prediction:
-\begin{enumerate}
-\item  User consumes a Jaqpot Model resource and provides a specific Dataset from a Dataset service, and a Dataset Service on which the prediction should be made. (Optionally provides a PMML file to specify a multitude of transformations to be applied to the dataset before prediction)
-\item Jaqpot responds to the user with a created Task for the required procedure.
-\item Jaqpot downloads the dataset in a properly formed manner.
-\item Jaqpot does preprocessing on the dataset, as dictated by the model’s algorithm and/or the PMML file the user provided.
-\item Jaqpot applies the selected model on the dataset and creates an array of predicted values.
-\item Jaqpot creates a new dataset by adding the array of predicted values on the original dataset. (adding a new Feature column with the URI of the Feature the model has saved for prediction purposes.)
-\item Jaqpot saves the newly created Dataset to the Dataset Service the user specified for prediction purposes (could very well be the same service with the original Dataset), and injects the URI of the new Dataset in the procedure’s Task.
-\item User consumes the given Task to acquire the URI of the created Dataset.
-\end{enumerate}
-
-These old procedures are very straightforward and intuitive and its pretty 
-obvious that no user interaction is needed in any steps between the first 
-and the last step of each procedure. Alas, changes must be made to allow 
-collaboration into the new eNM mindset.
-
-
-In eNanoMapper, construction of a properly formed Dataset by experimental 
-data of engineered nano-materials is not a trivial matter and should not be 
-confronted as such. Each Substance does not have a finite domain of Features, 
-as in Compounds and Conformers. What it does have is a collection of Studies, 
-each one with multiple measurements concerning a single experiment. 
-
-A reference URI for a collection of studies in a Substance: 
-
-https://apps.ideaconsult.net/enmtest/substance/FCSV-b87fcc13-ef28-3edb-9049-3153303b8076/study?media=application\%2Fjson
+\begin{lstlisting}[language=json]
+{
+  "title": "SuperTraining",
+  "description" : "this is a mighty algorithm",
+  "author" : "W.Y. Chung",
+  "parameters": [
+    {
+      "name" : "x",
+      "description" : "this is x",
+      "default_value" : 0.045,
+      "type" : "numeric",
+      "scope" : "optional"
+    },
+    {
+      "name" : "y",
+      "description" : "this is y",
+      "default_value" : true,
+      "type" : "boolean",
+      "scope" : "optional"
+    },
+  ]
+} 
+\end{lstlisting}
 
