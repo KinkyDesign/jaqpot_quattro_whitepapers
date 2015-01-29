@@ -158,13 +158,27 @@ create a dataset for prediction.
 New algorithms need to be \textit{registered} on JAQPOT Quattro
 so that JAQPOT knows how to invoke them. This is specified in 
 a very simple manner on registration. JPDI algorithms
-are registered by a POST method applied on \texttt{/algorithm}.
+are registered by a POST method applied on \texttt{/algorithm}
+specifying with a JSON document the following:
+\begin{enumerate}
+ \item Metadata of the algorithm such as its title, description,
+ authors, link(s) to BibTeX entry(ies), comments, a copyright notice,
+ contributors, and more,
+ \item The type of the algorithms according to the OpenTox algorithm
+ ontology (e.g., EagerLearning, Regression),
+ \item A list of parameters of the algorithm (both mandatory and optional).
+ A parameter of an algorithm has a name, a description (possible also more
+ metadata if necessary), a type (numeric/binary/string etc), and
+ a scope (optional/mandatory).
+\end{enumerate}
+Below, we give an example of an algorithm registration request.
 
 \begin{lstlisting}[language=json]
 {
   "title": "SuperTraining",
   "description" : "this is a mighty algorithm",
   "author" : "W.Y. Chung",
+  "algorithmTypes" : ["EagerLearning", "Regression"],
   "parameters": [
     {
       "name" : "x",
@@ -184,3 +198,5 @@ are registered by a POST method applied on \texttt{/algorithm}.
 } 
 \end{lstlisting}
 
+JAQPOT then responds with the URI of the algorithm that 
+was created (if the request succeeds) in \texttt{text/uri-list}.
