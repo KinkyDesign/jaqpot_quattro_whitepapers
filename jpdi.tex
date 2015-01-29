@@ -1,0 +1,117 @@
+\chapter{JPDI Architecture}
+Jaqpot Protocol of Data Interchange, shortly JPDI, 
+is a brand new feature of JAQPOT that allows developers 
+of QSAR-related or machine learning algorithms to 
+integrate their implementations in JAQPOT so that these
+can be used by JAQPOT for QSAR.
+
+
+n Jaqpot3 a Dataset is frequently consumed in ARFF format by the Dataset service, 
+as Weka is the main QSAR engine and Weka Instances can easily be created by ARFF. 
+Then all pre-processing is done on those Instances and the Algorithm training as well. 
+ARFF and Instances are quite convenient when applying Weka algorithms on a Dataset, 
+but not a generic solution to accommodate different Algorithmic engines.
+ 
+Jaqpot Quattro introduces OpenCPU, an HTTP proxy to R, a language that has 
+interesting packages regarding QSAR. In order to interact with R, Jaqpot must consume an 
+OpenCPU resource that masks an R function and provide a Dataset in Json format as input 
+to that function. The input Dataset could also be enriched by some extra detail, as to 
+which of the Features is to be predicted, and various parameters if 
+needed by the specific algorithm.
+
+
+\section{JPDI Specification}
+Algorithm implementation could be decoupled from Jaqpot. 
+Taking example from the OpenCPU solution, we could create different 
+individual services for each QSAR engine and it’s algorithms. Then a user could 
+use Jaqpot's Algorithm service to create/update/remove Algorithm resources at will. 
+
+\begin{figure}[h]
+ \centering
+ \includegraphics[keepaspectratio=true,width=0.6\textwidth]{figures/JPDI_general.png}
+\end{figure}
+
+As shown in the above figure, JAQPOT communicates with 
+third-party, external, and independent WSs over HTTP
+using a very simple REST interface that we will discuss
+hereafter and uses JSON as the standard data exchange format.
+The essential principles of JPDI are the following:
+
+
+\begin{enumerate}
+ \item The JPDI API is super-easy for non-expert programmers to 
+ implement (so that people can get to integrate their algorithms in
+ JAQPOT); JPDI compliant services do not need to maintain a database
+ or implement a queue of asynchronous jobs\footnote{this would be
+ required for someone to implement an OpenTox-compliant WS.},
+ \item JAQPOT and JPDI services are developed independently,
+ \item Services communicate over HTTP exchanging JSON files
+ \item Services exchange only what is necessary in the way the JPDI
+ specs mandate,
+ \item Integration is seamless: JPDI services are plug-in, plug-out 
+ and can be added or removed from JAQPOT Quattro at any time,
+ \item Third-party services are absolutely free to decide how they
+ want to store their models on JAQPOT (the can store them even in 
+ custom binary formats).
+\end{enumerate}
+
+
+\section{Training with JPDI-compliant WSs}
+
+
+
+
+\chapter{Datasets from Studies}
+
+\section{Introduction}
+JAQPOT Quattro is a essentially a QSAR model training/prediction software and, 
+as such, it should accept a properly formed dataset as input to all 
+such calculations. In old OpenTox times, the standard process of training 
+and prediction was as follows (short overview of what we already know):\\\\
+
+\noindent Training flow:
+\begin{enumerate}
+ \item 	User consumes a Jaqpot algorithm resource and provides a 
+	specific Dataset from a Dataset service. Also selects a feature to be 
+	predicted. (Optionally provides a PMML file to specify a multitude of 
+	transformations to be applied to the dataset before training)
+\item  Jaqpot responds to the user with a created Task for the required procedure.
+\item   Jaqpot downloads the dataset in a properly formed manner.
+ \item  Jaqpot does preprocessing on the dataset, as dictated by the algorithm and/or the PMML file the user provided.
+ \item  Jaqpot applies the selected algorithm on the dataset (excluding the prediction feature) and trains a Model. 
+ \item  Jaqpot creates a new Feature in a Feature service in order to store the results of the Model when the latter is to be used for training purposes. The URI of that new Feature is saved in the Model.
+ \item  Jaqpot persists the model in the database and injects a new URI created for that model in the procedure’s Task.
+ \item  User consumes the given Task to acquire the URI of the created Model.
+\end{enumerate}
+
+ 
+ 
+ 
+\noindent Prediction:
+\begin{enumerate}
+\item  User consumes a Jaqpot Model resource and provides a specific Dataset from a Dataset service, and a Dataset Service on which the prediction should be made. (Optionally provides a PMML file to specify a multitude of transformations to be applied to the dataset before prediction)
+\item Jaqpot responds to the user with a created Task for the required procedure.
+\item Jaqpot downloads the dataset in a properly formed manner.
+\item Jaqpot does preprocessing on the dataset, as dictated by the model’s algorithm and/or the PMML file the user provided.
+\item Jaqpot applies the selected model on the dataset and creates an array of predicted values.
+\item Jaqpot creates a new dataset by adding the array of predicted values on the original dataset. (adding a new Feature column with the URI of the Feature the model has saved for prediction purposes.)
+\item Jaqpot saves the newly created Dataset to the Dataset Service the user specified for prediction purposes (could very well be the same service with the original Dataset), and injects the URI of the new Dataset in the procedure’s Task.
+\item User consumes the given Task to acquire the URI of the created Dataset.
+\end{enumerate}
+
+These old procedures are very straightforward and intuitive and its pretty 
+obvious that no user interaction is needed in any steps between the first 
+and the last step of each procedure. Alas, changes must be made to allow 
+collaboration into the new eNM mindset.
+
+
+In eNanoMapper, construction of a properly formed Dataset by experimental 
+data of engineered nano-materials is not a trivial matter and should not be 
+confronted as such. Each Substance does not have a finite domain of Features, 
+as in Compounds and Conformers. What it does have is a collection of Studies, 
+each one with multiple measurements concerning a single experiment. 
+
+A reference URI for a collection of studies in a Substance: 
+
+https://apps.ideaconsult.net/enmtest/substance/FCSV-b87fcc13-ef28-3edb-9049-3153303b8076/study?media=application\%2Fjson
+

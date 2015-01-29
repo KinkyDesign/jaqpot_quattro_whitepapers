@@ -1,0 +1,36 @@
+\documentclass{report}
+
+\usepackage[utf8]{inputenc}
+\usepackage{lipsum}%% a garbage package you don't need except to create examples.
+\usepackage{fancyhdr}
+\usepackage{graphicx}
+
+
+% Headers and footers
+\pagestyle{fancy}
+\lhead{\includegraphics[width=2cm]{figures/jaqpot_quattro_logo.png}}
+\rhead{JAQPOT Quattro -- Design}
+\cfoot{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+\renewcommand{\footrulewidth}{0.4pt}
+
+\setlength{\headheight}{55pt}
+
+
+
+
+\author{kinkyDesign}
+\title{\includegraphics[width=10cm]{figures/jaqpot_quattro_logo.png}\\ 
+{\small \texttt{Design principles of jaqpot quattro}}}
+
+\begin{document}
+
+
+\maketitle
+
+
+
+\input{querying_requirements.tex}
+\input{jpdi.tex}
+
+\end{document}

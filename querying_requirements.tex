@@ -1,0 +1,263 @@
+\chapter{Querying requirements}
+
+
+
+\noindent Here we present a list of queries that one will be expected 
+to perform on the DB based on the REST API of OpenTox.
+
+\noindent General remarks:
+\begin{enumerate}
+ \item Consistency on delete is not an important feature of Jaqpot.
+ \item Other comments
+\end{enumerate}
+
+
+\section{Tasks and Error Reports}
+
+\noindent Read operations:
+\begin{enumerate}
+ \item Get task representation by ID
+ \item Get a list of task IDs:
+    \begin{enumerate}
+    \item from a given user
+    \item with a given status (\textit{e.g.}, running)
+    \end{enumerate}
+ \item List all task IDs (paginated)
+\end{enumerate}
+
+\noindent Write operations:
+\begin{enumerate}
+ \item Write new task as \texttt{QUEUED} (default)
+ \item Update the meta-data and/or status of a task
+\end{enumerate}
+
+\noindent Remarks:
+\begin{enumerate}
+ \item 	Here we have the most write and read intensive DB 
+	operations. Tasks can well be stored in an independent 
+	in-memory DB such as Redis. However, this would mean 
+	that when we restart the server, all tasks will be lost. 
+	Not sure this is the best choice. We can still store the 
+	tasks in a document DB (e.g., CouchBase).
+ \item 	In case of nested ErrorReport entities, children reports are 
+        only fetched with their parents.
+\end{enumerate}
+
+
+
+\section{Model}
+
+\noindent Read operations:
+\begin{enumerate}
+ \item Retrieve a model: Get model representation (metadata only -- 
+       no need to load the actual model) given the ID of the model.
+ \item Fetch only the actual model (binary object) but not the metadata. 
+ \item List all models of a user
+ \item List all models of an algorithm 
+ \item List all models for a given keyword (facilitate searching in meta-data)
+ \item Combinations of the two above (by user and algorithm)
+ \item List all model IDs (paginated)
+\end{enumerate}
+
+
+\noindent Write operations:
+\begin{enumerate}
+ \item Register new model (all info)
+ \item Update model to link to a new BibTeX
+ \item Update the meta-data of a model (\textit{e.g.}, new title)
+ \item Delete or disable model 
+\end{enumerate}
+
+
+\noindent Remarks:
+\begin{enumerate}
+ \item In models as well as in other resources, when retrieving data from the 
+       DB there will never be the need to fetch the user data (only the ID 
+       of the user is OK).
+ \item Notice that the actual model (binary) and its metadata are never loaded simultaneously.
+ \item In the OpenTox API one finds the method \texttt{GET /model/{id}/independent} 
+       (and related methods), but there is not need to create very specialized 
+       queries to serve these cases. If the model is stored as a document in the DB, 
+       it can be retrieved as a whole and then we can pick only the information we are interested in.
+\end{enumerate}
+
+
+
+
+
+\section{User}
+
+\noindent Read operations:
+\begin{enumerate}
+ \item List all user IDs
+ \item Get the representation of a user by ID
+ \item Get user's quota (part of the user representation actually)
+\end{enumerate}
+
+
+\noindent Write operations:
+\begin{enumerate}
+  \item Create new user
+  \item Update user quota limits
+  \item Delete user
+\end{enumerate}
+
+
+
+\section{BibTeX}
+
+\noindent Read operations:
+\begin{enumerate}
+\item Get the full representation of a BibTeX entity
+\item Search given a keyword
+\item List all BibTeX entries
+\end{enumerate}
+
+\noindent Write operations:
+\begin{enumerate}
+ \item Create new BibTeX
+ \item Update BibTeX
+ \item Delete BibTeX
+\end{enumerate}
+
+
+\noindent Remarks:\\
+BibTeX entities have really a lot of fields and it wouldn’t make sense 
+to have indexes for every such field. In these cases, we can introduce simply 
+a new keyword field that will be indexed and will do the job.
+
+
+\section{Features}
+\noindent Read operations
+\begin{enumerate}
+ \item Get representation of a feature by ID
+ \item List features (not too important)
+ \item Search features that are sameAs some other feature or feature category (ontology)
+ \item Search for features by \texttt{hasSource}
+ \item Search for features by their name or some keyword
+\end{enumerate}
+ 
+
+\noindent Write operations
+\begin{enumerate}
+ \item Create new feature
+ \item Update a feature (replace)
+ \item Delete feature
+\end{enumerate}
+
+
+
+\section{Compounds}
+
+\noindent Read operations:
+\begin{enumerate}
+ \item List compound IDs (paginated)
+\item  Fetch the representation of a compound ID
+\item  Search for the ID of a compound: (i) according to a keyword (we can use ElasticSearch) 
+       and/or (ii) the is \texttt{sameAs} some other feature or feature category from an ontology
+\item  Fetch a compound along with some features [returns a dataset]. 
+   The corresponding API method is \texttt{GET /compound/\{cid\}/feature}
+\item  Get all the conformers of a given compound
+\end{enumerate}
+
+
+\noindent Write operations:
+\begin{enumerate}
+\item Write a new compound in the DB
+\item  Update compound
+\item  Delete compound
+\item  Add conformers to a given compound
+\item  Update the representation of a conformer (using PUT)
+\end{enumerate}
+
+
+\noindent Remarks
+\begin{enumerate}
+\item  It is important to decide whether we will be saving every 
+representation of the compound in the database, or whether the new 
+representation will be calculated on the fly from what is found in the DB. 
+\textit{e.g.}, A client uploads the compound ‘aspirin’ on jaqpot4 in SDF and 
+creates a new resource, namely \texttt{/compound/123}. 
+Then one needs to retrieve \texttt{/compound/123} is MOL format. 
+Will this be generated on the fly? I guess this depends on how fast 
+this conversion can be done. 
+\item When retrieving datasets from the DB we do not need to 
+retrieve any representation of the compound. All compounds appear as links in the dataset.
+\end{enumerate}
+
+
+
+\section{FeatureValuePair}
+
+The only operation that is related to FeatureValuePair entities is the one implied by the API method 
+\texttt{POST /compound/\{cid\}/feature?feature\_uri=\{feature\}\& value=\{value\}} where a new value is stored in the DB as a FeatureValuePair
+
+\section{Dataset}
+
+\noindent Read operations
+\begin{enumerate}
+ \item Get all dataset IDs (list, paginated)
+\item  Fetch a dataset of given ID
+\item  List all datasets (IDs) that have a property (\textit{e.g.}, 
+   \texttt{created by user x} or \texttt{are annotated as \#jaqpot}). This can be simply done using ElasticSearch!
+\item  Get all features and feature values of a given compound (also discussed in Section “Compound”)
+\item  Merge datasets
+\item  Add compounds to datasets (creates new dataset on the fly)
+\item  Fetch a dataset and append a few features
+\end{enumerate}
+
+
+\noindent Write operations
+\begin{enumerate}
+\item  Create a new dataset (store all its values and the whole structure in the DB)
+\item  Update a dataset (replace existing one)
+\item Delete a dataset
+\end{enumerate}
+
+\noindent Remark: It seems we cannot store datasets in compact documents for many reasons. 
+One reason is that whenever a feature-value pair entry is modified, this needs to be known to 
+all datasets that use this value. \textit{e.g.}, if a client needs to modify the value of \texttt{molecular mass}
+of \texttt{aspirin}, this needs to be updated in all datasets. 
+Datasets are therefore collections of DataEntry entities.
+
+
+
+
+\section{Algorithm}
+
+There are certain cases that we need to store Algorithm entities
+in the DB. Descriptor calculation algorithms (especially when they 
+admit input parameters) may need to store new algorithm objects in the database. 
+See http://opentox.org/
+dev/apis/api-1.2/Algorithm\#section-7 for details. 
+Algorithms are simply stored and retrieved as documents. Search is necessary only 
+to return those algorithms that are sameAs some ontological category (need for one index). 
+In detail we have:
+
+\noindent Read operations
+\begin{enumerate}
+ \item List all algorithms
+\item  Fetch algorithm by ID
+\item  List algorithms that are sameAs a given ontological class
+\item  List all algorithms generated by a user
+\end{enumerate}
+
+\noindent Write operations\\
+Register a new algorithm
+
+\section{Policy}
+
+\noindent Read operations
+\begin{enumerate}
+ \item Fetch a policy of a given ID
+\item  List all policies of a given user
+\item  Search for a policy for a URI (allowed to the owner of the policy only)
+\end{enumerate}
+
+
+\noindent Write operations
+\begin{enumerate}
+\item  Register policy
+\item  Update policy (replace)
+\item  Delete policy
+\end{enumerate}
