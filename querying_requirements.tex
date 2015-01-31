@@ -1,4 +1,4 @@
-\chapter{Querying requirements}
+\section{Querying requirements}
 
 
 
@@ -12,7 +12,7 @@ to perform on the DB based on the REST API of OpenTox.
 \end{enumerate}
 
 
-\section{Tasks and Error Reports}
+\subsection{Tasks and Error Reports}
 
 \noindent Read operations:
 \begin{enumerate}
@@ -45,7 +45,7 @@ to perform on the DB based on the REST API of OpenTox.
 
 
 
-\section{Model}
+\subsection{Model}
 
 \noindent Read operations:
 \begin{enumerate}
@@ -85,7 +85,7 @@ to perform on the DB based on the REST API of OpenTox.
 
 
 
-\section{User}
+\subsection{User}
 
 \noindent Read operations:
 \begin{enumerate}
@@ -104,7 +104,7 @@ to perform on the DB based on the REST API of OpenTox.
 
 
 
-\section{BibTeX}
+\subsection{BibTeX}
 
 \noindent Read operations:
 \begin{enumerate}
@@ -127,7 +127,7 @@ to have indexes for every such field. In these cases, we can introduce simply
 a new keyword field that will be indexed and will do the job.
 
 
-\section{Features}
+\subsection{Features}
 \noindent Read operations
 \begin{enumerate}
  \item Get representation of a feature by ID
@@ -147,7 +147,7 @@ a new keyword field that will be indexed and will do the job.
 
 
 
-\section{Compounds}
+\subsection{Compounds}
 
 \noindent Read operations:
 \begin{enumerate}
@@ -187,12 +187,12 @@ retrieve any representation of the compound. All compounds appear as links in th
 
 
 
-\section{FeatureValuePair}
+\subsection{FeatureValuePair}
 
 The only operation that is related to FeatureValuePair entities is the one implied by the API method 
 \texttt{POST /compound/\{cid\}/feature?feature\_uri=\{feature\}\& value=\{value\}} where a new value is stored in the DB as a FeatureValuePair
 
-\section{Dataset}
+\subsection{Dataset}
 
 \noindent Read operations
 \begin{enumerate}
@@ -223,7 +223,7 @@ Datasets are therefore collections of DataEntry entities.
 
 
 
-\section{Algorithm}
+\subsection{Algorithm}
 
 There are certain cases that we need to store Algorithm entities
 in the DB. Descriptor calculation algorithms (especially when they 
@@ -245,7 +245,7 @@ In detail we have:
 \noindent Write operations\\
 Register a new algorithm
 
-\section{Policy}
+\subsection{Policy}
 
 \noindent Read operations
 \begin{enumerate}

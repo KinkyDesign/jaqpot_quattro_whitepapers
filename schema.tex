@@ -1,0 +1,132 @@
+%Schemaless schema 
+\chapter{Data Model}
+
+\input{er.tex}
+\input{querying_requirements.tex}
+
+\section{Database schema}
+JAQPOT Quattro will make use of a document database, 
+which is to a good extent schema-less. Here we discuss about 
+the basic documents of JAQPOT Quattro and the indexes we need to 
+introduce so as to maximize the performance of the 
+search, insert and update operations defined previously.
+
+The overall data schema refers to three databases:
+
+\begin{enumerate}
+ \item  A document database, in our case mongodb, that stores data in the form of documents. Most of JAQPOT’s resources are stored in this database,
+\item  A relational database system, here mysql, that stores certain relations that have to do with datasets
+\item  An ElasticSearch DB system that stores keyword-related data to facilitate the exploration of our domain.
+\end{enumerate}
+
+\subsection{Task and ErrorReport}
+
+\textit{Example 1.} A completed task (note: duration is in milliseconds).
+
+\begin{lstlisting}[language=json]
+{ 
+    "status":"COMPLETED", 
+    "http_status":200, 
+    "result": "http://opentox.ntua.gr:8080/model/234", 
+    "duration":452, 
+    "progress":[ 
+        "data loaded", 
+        "new resources have been created", 
+        "now training the model", 
+        "model training completed", 
+        "result: OK" 
+        ], 
+    "creator":"guest@opentox.ntua.gr", 
+    "time_created":"2015-12-01 14:04:45 CET" 
+} 
+\end{lstlisting}
+
+\noindent \textit{Example 2.} A failed task with an error report in it:
+\begin{lstlisting}[language=json]
+{ 
+    "status":"ERROR", 
+    "http_status":400, 
+    "duration":200, 
+    "progress":[ 
+        "data loaded", 
+        "new resources have been created", 
+        "now training the model", 
+        "failed!" 
+        ], 
+    "creator":"guest@opentox.ntua.gr", 
+    "time_created":"2015-12-01 14:04:45 CET", 
+    "error_report":{ 
+        "error_code":"XR243", 
+        "actor":"client with IP 10.8.0.4", 
+        "message":"Malformed input data", 
+        "details":"Provide some details here to assist debugging", 
+        "trace": { 
+            "comment":"some other error report goes here if necessary" 
+        } 
+    } 
+} 
+\end{lstlisting}
+
+\noindent \textit{Example 3.} A running task:
+\begin{lstlisting}[language=json]
+{ 
+    "status":"RUNNING", 
+    "percentage":57, 
+    "http_status":202, 
+    "progress":[ 
+        "data loaded", 
+        "new resources have been created", 
+        "now training the model" 
+        ], 
+    "creator":"guest@opentox.ntua.gr", 
+    "time_created":"2015-12-01 14:04:45 CET" 
+} 
+\end{lstlisting}
+
+Notice that we do not assign IDs to the above documents since 
+mongodb will create automatically a unique ID which is always 
+denoted by \texttt{\_id}.
+
+Indexes:
+1. creator
+2. status
+3. (creator, status)
+
+\begin{lstlisting}[language=json]
+db.tasks.ensureIndex({"creator":1});
+db.tasks.ensureIndex({"status":1});
+db.tasks.ensureIndex({"creator":1, "status":1});
+\end{lstlisting}
+
+One can update the metadata of a task. 
+See this example:
+\begin{lstlisting}[language=json]
+db.tasks.update( 
+  { _id: ObjectId("54b454f8feee5a13a43f34f3") },  
+  { $addToSet:  
+     { "progress": "moved to step 4" } 
+  } 
+); 
+\end{lstlisting}
+
+All other update operations can be performed in a very standard way.
+
+It is possible to fetch the data of a document from the DB without the data in a given field. For example, we can fetch a task without the progress information (here we assume we know the ID of the task):
+
+\begin{lstlisting}[language=json]
+db.tasks.find(
+  {_id: ObjectId("54b454f8feee5a13a43f34f3")}, 
+  {progress:0}
+).pretty();
+\end{lstlisting}
+
+in some cases we may need to check only the status of a task (provided that we know its ID):
+\begin{lstlisting}[language=json]
+db.tasks.find(
+  {_id: ObjectId("54b454f8feee5a13a43f34f3")}, 
+  {status:1}
+).pretty();
+\end{lstlisting}
+
+Remarks:
+1. Tasks should be implemented as TTL (time-to-live) collections so that old tasks are garbage-collected.

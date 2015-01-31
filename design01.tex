@@ -5,10 +5,17 @@
 \usepackage{fancyhdr}
 \usepackage{graphicx}
 \usepackage{listings}
-\usepackage{xcolor}
+\usepackage[dvipsnames]{xcolor}
+\usepackage{sectsty}
+\chapterfont{\color{BrickRed}}  % sets colour of chapters
+\sectionfont{\color{BlueViolet}}  % sets colour of sections
+\subsectionfont{\color{OliveGreen}}  % sets colour of sections
 
+
+\renewcommand{\familydefault}{\sfdefault}
+ 
 \colorlet{punct}{red!60!black}
-\definecolor{background}{HTML}{EEEEEE}
+\definecolor{background}{HTML}{FEFFFF}
 \definecolor{delim}{RGB}{20,105,176}
 \colorlet{numb}{magenta!60!black}
 
@@ -20,16 +27,6 @@
     breaklines=true,
     backgroundcolor=\color{background},
     literate=
-     *{0}{{{\color{numb}0}}}{1}
-      {1}{{{\color{numb}1}}}{1}
-      {2}{{{\color{numb}2}}}{1}
-      {3}{{{\color{numb}3}}}{1}
-      {4}{{{\color{numb}4}}}{1}
-      {5}{{{\color{numb}5}}}{1}
-      {6}{{{\color{numb}6}}}{1}
-      {7}{{{\color{numb}7}}}{1}
-      {8}{{{\color{numb}8}}}{1}
-      {9}{{{\color{numb}9}}}{1}
       {:}{{{\color{punct}{:}}}}{1}
       {,}{{{\color{punct}{,}}}}{1}
       {\{}{{{\color{delim}{\{}}}}{1}
@@ -41,7 +38,7 @@
 % Headers and footers
 \pagestyle{fancy}
 \lhead{\includegraphics[width=2cm]{figures/jaqpot_quattro_logo.png}}
-\rhead{JAQPOT Quattro -- Design}
+\rhead{JAQPOT Quattro -- (Kinky) Design phase}
 %\cfoot{\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
 
@@ -60,9 +57,10 @@
 \maketitle
 
 
-
-\input{querying_requirements.tex}
+\input{schema.tex}
 \input{jpdi.tex}
 \input{datasets_studies.tex}
+
+
 
 \end{document}

@@ -149,8 +149,6 @@ create a dataset for prediction.
 
 
 
-
-
 \section{Prediction with JPDI-compliant WSs}
 
 
@@ -200,3 +198,11 @@ Below, we give an example of an algorithm registration request.
 
 JAQPOT then responds with the URI of the algorithm that 
 was created (if the request succeeds) in \texttt{text/uri-list}.
+
+\section{Access restriction}
+When a user creates a new algorithm (following the procedure described here
+above), access is granted only to them only. Users can then modify the access
+policy on their algorithm to grant access to other users or even make 
+these algorithms publicly accessible. Algorithms will receive ranking
+from users. Until an algorithm reaches high ranking, or is approved by
+the administrators of JAQPOT, it will be tagged as \textit{experimental}.
