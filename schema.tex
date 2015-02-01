@@ -14,7 +14,8 @@ search, insert and update operations defined previously.
 The overall data schema refers to three databases:
 
 \begin{enumerate}
- \item  A document database, in our case mongodb, that stores data in the form of documents. Most of JAQPOT’s resources are stored in this database,
+ \item  A document database, in our case mongodb, that stores data in the form of documents. 
+ Most of JAQPOT’s resources are stored in this database,
 \item  A relational database system, here mysql, that stores certain relations that have to do with datasets
 \item  An ElasticSearch DB system that stores keyword-related data to facilitate the exploration of our domain.
 \end{enumerate}
@@ -111,7 +112,9 @@ db.tasks.update(
 
 All other update operations can be performed in a very standard way.
 
-It is possible to fetch the data of a document from the DB without the data in a given field. For example, we can fetch a task without the progress information (here we assume we know the ID of the task):
+It is possible to fetch the data of a document from the DB without the data in a given field. 
+For example, we can fetch a task without the progress information 
+(here we assume we know the ID of the task):
 
 \begin{lstlisting}[language=json]
 db.tasks.find(
@@ -129,4 +132,506 @@ db.tasks.find(
 \end{lstlisting}
 
 Remarks:
-1. Tasks should be implemented as TTL (time-to-live) collections so that old tasks are garbage-collected.
+\begin{enumerate}
+ \item Tasks should be implemented as TTL (time-to-live) collections so that old tasks are garbage-collected.
+\end{enumerate}
+
+\subsection{Model}
+Example Model document:
+\begin{lstlisting}[language=json]
+{
+    "algorithm":"http://opentox.ntua.gr:8080/algorithm/xyz",
+    "description":"Krugerweilderbengeschaft's algorithm",
+    "bibtex_ref":"http://opentox.ntua.gr:8080/bibtex/asdf123",
+    "creator":"hampos@jaqpot.ntua.gr",
+    "actual_model_id":"fsfhafkjaf1234",
+    "reliability":2,
+    "dataset_uri":"http://opentox.ntua.gr:8080/dataset/5432",
+    "independent_features":[H
+        "http://someserver.org:1234/feature/1",
+        "http://someserver.org:1234/feature/2",
+        "http://someserver.org:1234/feature/3",
+        "http://someserver.org:1234/feature/4",
+        "http://someserver.org:1234/feature/5"
+    ],
+    "dependent_feature":"http://otherserver.org:1234/feature/100",
+    "predicted_feature":"http://otherserver.org:1234/feature/455",
+    "parameters":[
+        {
+            "name":"alpha",
+            "value":14,
+            "scope":"mandatory",
+            "value_type":"numeric",
+            "description":"convergence rate"
+        },
+        {
+            "name":"tolerance",
+            "value":0.004,
+            "scope":"optional",
+            "value_type":"numeric"
+        }
+    ]
+}
+\end{lstlisting}
+
+\noindent Indexes:
+\begin{enumerate}
+ \item creator
+\item algorithm
+\item (creator, algorithm)
+\end{enumerate}
+
+The actual model of a Model are stored outside the model document.  
+Note that when the metadata of the model are requested (when the method 
+\texttt{GET /model/\{id\}} is invoked), the actual (binary) model 
+data are not fetched.
+
+
+\subsection{User}
+Here is an example of a user (note: passwords are hashed):
+\begin{lstlisting}[language=json]
+{ 
+  "uid":"guest@opentox.ntua.gr", 
+  "name":"Guest Guestopoulos", 
+  "timestamp":"2015-01-01 15:08:01 CET", 
+  "password":"SDF#YHFDJSNF5443#*@RY", 
+  "email":"guest@guest.org", 
+  "max_models":10000, 
+  "max_bibtex":-1, 
+  "max_compounds":50000, 
+  "max_parallel_tasks":5 
+} 
+\end{lstlisting}
+the read operations we require are very simple: search by \texttt{\_id}, 
+update the quota limits, delete a user.
+
+\subsection{BibTeX}
+Most entries of a BibTeX entity need to be searchable; 
+therefore, we introduce them into an ElasticSearch database. 
+The same concept will be used also for other cases where we need advanced 
+search capabilities. The ElasticSearch DB will return the IDs of the 
+BibTeX entries that match a given query so that the actual data can then 
+be retrieved from the mongodb database, that is ElasticSearch is used to 
+retrieve indices very fast and very efficiently. 
+
+Here is a simple BibTeX document:
+
+\begin{lstlisting}[language=json]
+{
+    "entry_type":"article",
+    "bibtex_key":"MayRaw+00",
+    "title":"Constrained model predictive control: Stability and optimality",
+    "author":"D.Q. Mayne and J.B. Rawlings and C.V. Rao and P.O.M. Scokaert",
+    "journal":"Automatica",
+    "volume":36,
+    "number":6,
+    "pages":"789-814",
+    "creator":"chung@jaqpot.org",
+    "issn":"0005-1098",
+    "doi":"http://dx.doi.org/10.1016/S0005-1098(99)00214-9",   
+    "url":"http://www.sciencedirect.com/science/article/pii/S0005109899002149",
+    "year":2000,
+    "abstract":"Model predictive control is a form of ",
+    "pdf":"~/Documents/articles/mpc_paper.pdf",
+    "keywords": [
+"MPC", 
+"Model predictive control",
+"Lyapunov theory",
+"positive invariance"
+    ]
+}
+\end{lstlisting}
+In order to create a new BibTeX entry on ElasticSearch we PUT the above document 
+at \texttt{/bibtex/entry/\{bibid\}}, where \texttt{\{bibid\}} is a unique 
+identifier of the document. ElasticSearch responds with the following document:
+\begin{lstlisting}[language=json]
+{
+  "_index":"bibtex",
+  "_type":"entry",
+  "_id":"MayRaw00",
+  "_version":1,
+  "created":true
+}
+\end{lstlisting}
+%
+%
+and we can therefore tell that no previously existing document has been replaced. 
+We can of course use POST for an ID to be automatically created, but we'll go for 
+\texttt{PUT} since in our approach it is Jaqpot Quattor that decides the ID. 
+This document can then be found where we put it (if we know its \texttt{\{bibid\}}):
+
+At \texttt{/bibtex/entry/MayRaw00}, we retrieve the following document:
+\begin{lstlisting}[language=json]
+{ 
+  "_index" : "bibtex", 
+  "_type" : "entry", 
+  "_id" : "MayRaw00", 
+  "_version" : 6, 
+  "found" : true, 
+  "_source": 
+{ 
+    "entry_type":"article", 
+    "bibtex_key":"MayRaw+00", 
+    "title":"Constrained model predictive control: Stability and optimality", 
+    "author":"D.Q. Mayne and J.B. Rawlings and C.V. Rao and P.O.M. Scokaert", 
+    "journal":"Automatica", 
+    "volume":36, 
+    "number":6, 
+    "pages":"789-814", 
+    "creator":"chung@jaqpot.org", 
+    "issn":"0005-1098", 
+    "doi":"http://dx.doi.org/10.1016/S0005-1098(99)00214-9",    
+    "url":"http://www.sciencedirect.com/science/article/pii/S0005109899002149", 
+    "year":2000, 
+    "abstract":"Model predictive control is a form of ", 
+    "pdf":"~/Documents/articles/mpc_paper.pdf", 
+    "keywords": [ 
+"MPC",  
+"Model predictive control", 
+"Lyapunov theory", 
+"positive invariance" 
+    ] 
+} 
+} 
+\end{lstlisting}
+%
+%
+A simple query in the database is the following: Find all documents with author ‘Mayne’ (we don’t need to specify all authors):
+%
+\begin{lstlisting}[language=json]
+curl-X GET "localhost:9200/bibtex/entry/_search?q=author:Mayne"
+\end{lstlisting}
+This returns the response:
+\begin{lstlisting}[language=json]
+{ 
+  "took" : 14, 
+  "timed_out" : false, 
+  "_shards" : { 
+    "total" : 5, 
+    "successful" : 5, 
+    "failed" : 0 
+  }, 
+  "hits" : { 
+    "total" : 3, 
+    "max_score" : 0.25, 
+    "hits" : [ { 
+      "_index" : "bibtex", 
+      "_type" : "entry", 
+      "_id" : "MayRaw00", 
+      "_score" : 0.25, 
+      "_source": 
+{ 
+    "entry_type":"article", 
+    "bibtex_key":"MayRaw+00", 
+ [more...]
+\end{lstlisting}
+%
+%
+A lot of similar queries can be performed and ElasticSearch has a lot of nice 
+features such as \textit{percolation}, \textit{search suggesters}, \textit{more-like-this} features, 
+\textit{aggregations} and many more.
+
+
+
+
+
+
+\subsection{Feature}
+Very simple documents as follows:
+\begin{lstlisting}[language=json]
+{
+    "name":"molecular weight",
+    "units":"Da",
+    "description":"blah blah",
+    "hasSou rce":"http://jaqpot.org:8080/model/45",
+    "sourceType":"model",
+    "sameAs":"http://someontology.org/v/1.1#MolecularWeight",
+    "creator":"chung@jaqpot.org",
+    "featureType":"numeric"
+}
+\end{lstlisting}
+%
+%
+Indexes:
+\begin{enumerate}
+ \item hasSource
+\item  sameAs
+\item  creator
+\item  possibly combinations of the above
+\end{enumerate}
+
+
+\subsection{Conformers}
+A conformer document in JSON looks something like this 
+(we will explain why we have adopted this structure, just for 
+now remember that the shallower the documents are, the more 
+efficient search operations are in document databases):
+\begin{lstlisting}[language=json]
+{ 
+    "father_compound": 55, 
+    "name": ["aspirin", "acetylsalicylic acid"], 
+    "smiles": "CC(=O)Oc1ccccc1C(=O)O", 
+    "inchi_key": "BSYNRYMUTXBXSQ-UHFFFAOYSA-N", 
+    "sdf_representation": "http://server.com/compound/2/sdf", 
+    "comment": [ 
+        "this is a comment", 
+        "analogue of rdfs:comment" 
+    ], 
+    "identifier": "http://opentox.ntua.gr:8080/compound/55/conformer/2", 
+    "feature/10":{"title":"average_mass", "value":180.157, "units":"Da"}, 
+    "feature/83":{"title":"monoisotropic_mass","value":180.042, "units":"Da"}, 
+    "feature/62":{"title":"iupac_name", "value":"2-Acetoxybenzoic acid"} 
+} 
+\end{lstlisting}
+Notice that we can find in the representation of the conformer a 
+link to its father (the compound that holds it). Additionally, it is 
+not important to have the units of features inside the document, but 
+it is of course possible to add them. In the conformer document we can, 
+but we do not intend to store data related to prediction features or 
+in any other way data that can make the conformer document increase 
+endlessly and break the efficiency of our schema. Prediction features 
+are stored in a different way (that combines mongodb with a relational 
+database system) and the adopted schema is described in the next section.
+%
+We can easily append some new FeatureValuePair entity like this:
+
+\begin{lstlisting}[language=json] 
+db.compounds.update(
+    {"_id" : ObjectId("54b46dedee9871fd62716680")}, 
+    { $set: 
+        { 
+          "feature/32": 
+              { 
+                "title":"CASRN", 
+                "value":"50-78-2"
+                "description":"CAS registry number"
+              } 
+        } 
+    }
+);
+\end{lstlisting}
+
+we can also delete such FeatureValuePair entries. One can do many other things such as add tags to the document using 
+\texttt{\$addToSet}. Here is a snippet:
+
+\begin{lstlisting}[language=json]
+db.compounds.update(  
+    {"_id" : ObjectId("54b46dedee9871fd62716680")},  
+    { $addToSet:  
+        { "tags":"anti-inflammatory" }  
+    }  
+); 
+\end{lstlisting}
+
+It will be necessary to retrieve only some of the fields of a conformer document. Here is how it can work:
+
+\begin{lstlisting}[language=json]
+db.compounds.find(
+    {"_id" : ObjectId("54b46dedee9871fd62716680")},
+    {
+      "feature/10":1, 
+      "feature/62":1,
+      "father_compound":1
+    }
+);
+\end{lstlisting}
+
+this is good practice according to the mongodb online guide which states that "When you need only a subset of fields from documents, you can achieve better performance by returning only the fields you need". The above command will give the following output:
+\begin{lstlisting}[language=json]
+{
+	"_id" : ObjectId("54b46dedee9871fd62716680"),
+	"father_compound" : 55,
+	"feature/10" : {
+		"title" : "average_mass",
+		"value" : 180.157
+	},
+	"feature/62" : {
+		"title" : "iupac_name",
+		"value" : "2-Acetoxybenzoic acid"
+	}
+}
+\end{lstlisting}
+
+Remarks: 
+1. When constructing a dataset we need exactly the following things: conformer links, feature links, and feature-value pairs for each compound. We don’t  need to retrieve the compound representation (SMILES, SDF or any other), or details about the feature or anything else. In simple words: the dataset is expected to deliver the information that can be found in an ARFF document. 
+2. We can serialise datasets in SDF format (i.e., a document format that includes the representations of all compounds as well), and this is perfectly feasible in the above context.
+3. It may be expedient to introduce an array in Conformer entities that holds all features, i.e., something like:
+\begin{lstlisting}[language=json]
+{
+ "features": [ "feature/14", "feature/15", "feature/16" ] 
+}
+\end{lstlisting}
+For easier and faster lookup. However, these queries don't need to served at maximum efficiency
+
+Important remark: One would have possibly expected a more rational JSON schema in regard to the representation of FeatureValuePair entities, such as the following:
+
+\begin{lstlisting}[language=json]
+{ 
+    "father_compound": 55, 
+    "name": "aspirin", 
+    "smiles": "CC(=O)Oc1ccccc1C(=O)O", 
+    "inchi_key": "BSYNRYMUTXBXSQ-UHFFFAOYSA-N", 
+    "sdf_representation": "http://server.com/compound/2/sdf", 
+    "comment": [ 
+        "this is a comment", 
+        "analogue of rdfs:comment" 
+    ], 
+    "identifier": "http://opentox.ntua.gr:8080/compound/55/conformer/2", 
+    "feature_value_pairs": [ 
+        { 
+            "feature_name": "average_mass", 
+            "feature_id": 10, 
+            "comment": [ 
+                "feature uri is http://jaqpot.org:8080/feature/10", 
+                "this is a FeatureValuePair thing" 
+            ], 
+            "value": 180.157, 
+            "units": "Da" 
+        }, 
+        { 
+            "feature_name": "monoisotropic_mass", 
+            "feature_id": 83, 
+            "value": 180.042252, 
+            "units": "Da", 
+            "feature_same_as": "ot:MonoIsoMass" 
+        }, 
+        { 
+            "feature_name": "iupac_name", 
+            "feature_id": 62, 
+            "value": "2-Acetoxybenzoic acid", 
+            "units": "", 
+            "feature_same_as":"http://www.opentox.org/api/1.1#ChemicalName"
+
+        } 
+    ] 
+} 
+\end{lstlisting}
+
+However, it is more difficult (yet possible\footnote{Using aggregation (e.g., map-reduce) -- 
+see http://docs.mongodb.org/manual/core/aggregation-introduction}) to retrieve from the database a 
+filtered document with only some selected feature values. We, therefore, have 
+chosen to abide by the principle of shallow documents.
+
+Conformer Lookup: We shall need to be able to lookup for conformers given their
+name (each conformer has multiple names, including the IUPAC standard name), or 
+SMILES. Features like: ``did you mean...'' or ``type completion'' will also be necessary. 
+This is why we shall introduce these fields (name, IUPAC name, smiles) into the ElasticSearch database.
+
+\subsection{Substructual lookups}
+Given a SMILES string\footnote{ If the substructure is given in any other representaiton 
+(\textit{e.g.}, SDF), it will be first converted to SMILES by JAQPOT.}, we need a very efficient 
+way to determine those conformers whose this is a substructure. To this end, we need to 
+store for each compound a close-to-complete list of its substructures (mind that for large 
+compounds they can be up to some thousands). At the same time, it will also be useful to 
+have quick access to the list of substructures of a given compound. For that, we propose 
+the following schema:
+
+We extend the aforementioned Conformer schema to include 
+these substructures as an array under the field substructures%
+\footnote{TBD: there may be more efficient algorithms one may consider (todo: check the literature).}:
+\begin{lstlisting}[language=json]
+{   "father_compound": 55, 
+    "name": "aspirin", 
+    "smiles": "CC(=O)Oc1ccccc1C(=O)O",
+    "substructures": [ 
+	"c1ccccc1", "C", "CC", "CCC", "CCCCCC", "CC(=O)O", "C(=O)O" 
+    ],
+...
+}
+\end{lstlisting}
+
+we then also store these substructures in ElasticSearch as follows:
+\begin{lstlisting}[language=json]
+{ "conformer_id": 56123a42c134edad2342c, 
+  "father_id": 55,
+  "substructures": ["c1ccccc1", "C", "CC", "CCC", "CCCCCC", "CC(=O)O", "C(=O)O"]
+}
+\end{lstlisting}
+
+\subsection{Compounds}
+Compounds are collections of conformers. Their representation is very simple:
+\begin{lstlisting}[language=json]
+{ 
+    "conformers": [   
+      423, 35423, 123, 9130, 9091, 23, 24, 25, 26 
+    ]
+}
+\end{lstlisting}
+
+They are rarely updated and their updates are very easy using \texttt{\$addToSet}.
+
+\subsection{Prediction Feature Data}
+Prediction feature data (values) are stored in simple 
+documents in the database that look like this:
+
+\begin{lstlisting}[language=json]
+{ 
+    "_id": ObjectId("54b46dedee9871fd62716680"),
+    "feature":"feature/4234524", 
+    "value":0.1343,
+    "value_type":"numeric"
+} 
+\end{lstlisting}
+
+a possible query is to ask for a collection of feature values which, in mongodb, is done as follows:
+\begin{lstlisting}[language=json]
+db.pred.find( 
+    {feature:  
+        {$in: ["feature/183", "feature/9983"]} 
+    } 
+).pretty(); 
+\end{lstlisting}
+
+a relational database stores the feature-value pair \texttt{\_id} of those 
+feature-value pairs that correspond to the predicted features of a dataset. 
+
+\subsection{Datasets}
+Datasets are not stored as documents (save cached datasets), but are a set of relations. In particular:
+Many datasets have zero-or-many prediction features and zero-or-many conformers and zero-or-many 
+prediction feature values (points to document db).
+It is then easy to see that the most well-fit structure for our mysql DB is:
+
+
+
+Cached Datasets
+A MFU cache is employed to store the most frequently used dataset objects. On top of our implementation, mongodb will keep in RAM some of them.
+
+\subsection{Algorithm}
+
+
+\subsection{Policies and Authentication Tokens}
+A policy infrastructure can be implemented extending the current API 
+(based on SSO). This can be a general purpose A\&A infrastructure running separately 
+and independently of JAQPOT. A policy specifies access-rules method-wise. 
+Here is a representation of a JAQPOT4 policy:
+\begin{lstlisting}[language=json]
+{
+  "policy_name":""model_eaa7f89f",
+  "creator":"chung@jaqpot.org",
+  "creation_date":"1413354887912",
+  "last_modified":"1413354887912",
+  "target":"http://jaqpot.org/model/123",
+  "rules": [
+    {
+    "allowed_methods": ["get", "post"],
+    "subject_type":"user",
+    "subjects": [
+      "user1@jaqpot.org",
+      "user2@jaqpot.org"
+    ]
+    },
+    {
+    "allowed_methods": ["get","post","put","delete"],
+    "subject_type":"group",
+    "subjects": [ "group:admins" ]
+    }
+  ]
+}
+\end{lstlisting}
+
+Rules are by default non-exclusive; if a rule allows a subject to apply the method, 
+then permission is finally granted to them. This can be overriden by specifying a 
+propositional logic equivalence between rules. In the example above for instance, 
+say user \texttt{user1@jaqpot.org} is an administrator. Then the first rule doesn't 
+allow the user to apply a put, but the second one does; at the end of the day, the user 
+must be granted access. 
