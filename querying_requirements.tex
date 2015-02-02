@@ -8,7 +8,11 @@ to perform on the DB based on the REST API of OpenTox.
 \noindent General remarks:
 \begin{enumerate}
  \item Consistency on delete is not an important feature of Jaqpot.
- \item Other comments
+ \item In a document database we don't have foreign keys. Their counterpart are 
+ links to external objects (\textit{e.g.}, a URI, or the ID of some other object
+ in the database). However, these links are weak and the advantage this offers
+ is that we can combine resources from different servers. For the first time, we'll
+ be able to have datasets with substances from different services!
 \end{enumerate}
 
 
@@ -204,7 +208,7 @@ where a new value is stored in the DB as a FeatureValuePair
 \item  Get all features and feature values of a given compound (also discussed in Section “Compound”)
 \item  Merge datasets
 \item  Add compounds to datasets (creates new dataset on the fly)
-\item  Fetch a dataset and append a few features
+\item  Fetch a dataset and append a few features (similar to merging)
 \end{enumerate}
 
 

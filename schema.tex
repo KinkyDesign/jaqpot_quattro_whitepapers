@@ -294,7 +294,8 @@ At \texttt{/bibtex/entry/MayRaw00}, we retrieve the following document:
 \end{lstlisting}
 %
 %
-A simple query in the database is the following: Find all documents with author ‘Mayne’ (we don’t need to specify all authors):
+A simple query in the database is the following: Find all documents with author 
+\texttt{Mayne} (we don’t need to specify all authors):
 %
 \begin{lstlisting}[language=json]
 curl-X GET "localhost:9200/bibtex/entry/_search?q=author:Mayne"
@@ -326,7 +327,8 @@ This returns the response:
 %
 %
 A lot of similar queries can be performed and ElasticSearch has a lot of nice 
-features such as \textit{percolation}, \textit{search suggesters}, \textit{more-like-this} features, 
+features such as \textit{percolation}, \textit{search suggesters}, 
+\textit{more-like-this} features, 
 \textit{aggregations} and many more.
 
 
@@ -409,7 +411,8 @@ db.compounds.update(
 );
 \end{lstlisting}
 
-we can also delete such FeatureValuePair entries. One can do many other things such as add tags to the document using 
+we can also delete such FeatureValuePair entries. 
+One can do many other things such as add tags to the document using 
 \texttt{\$addToSet}. Here is a snippet:
 
 \begin{lstlisting}[language=json]
@@ -421,7 +424,8 @@ db.compounds.update(
 ); 
 \end{lstlisting}
 
-It will be necessary to retrieve only some of the fields of a conformer document. Here is how it can work:
+It will be necessary to retrieve only some of the 
+fields of a conformer document. Here is how it can work:
 
 \begin{lstlisting}[language=json]
 db.compounds.find(
@@ -434,7 +438,10 @@ db.compounds.find(
 );
 \end{lstlisting}
 
-this is good practice according to the mongodb online guide which states that "When you need only a subset of fields from documents, you can achieve better performance by returning only the fields you need". The above command will give the following output:
+this is good practice according to the mongodb online guide which states that 
+``When you need only a subset of fields from documents, you can achieve better 
+performance by returning only the fields you need''. 
+The above command will give the following output:
 \begin{lstlisting}[language=json]
 {
 	"_id" : ObjectId("54b46dedee9871fd62716680"),
@@ -450,10 +457,13 @@ this is good practice according to the mongodb online guide which states that "W
 }
 \end{lstlisting}
 
-Remarks: 
-1. When constructing a dataset we need exactly the following things: conformer links, feature links, and feature-value pairs for each compound. We don’t  need to retrieve the compound representation (SMILES, SDF or any other), or details about the feature or anything else. In simple words: the dataset is expected to deliver the information that can be found in an ARFF document. 
-2. We can serialise datasets in SDF format (i.e., a document format that includes the representations of all compounds as well), and this is perfectly feasible in the above context.
-3. It may be expedient to introduce an array in Conformer entities that holds all features, i.e., something like:
+\noindent Remarks: 
+\begin{enumerate}
+ \item  When constructing a dataset we need exactly the following things: conformer links, feature links, and feature-value pairs for each compound. We don’t  need to retrieve the compound representation (SMILES, SDF or any other), or details about the feature or anything else. In simple words: the dataset is expected to deliver the information that can be found in an ARFF document. 
+\item  We can serialise datasets in SDF format (i.e., a document format that includes the representations of all compounds as well), and this is perfectly feasible in the above context.
+\item  It may be expedient to introduce an array in Conformer entities that holds all features, i.e., something like:
+\end{enumerate}
+%
 \begin{lstlisting}[language=json]
 {
  "features": [ "feature/14", "feature/15", "feature/16" ] 
@@ -537,7 +547,7 @@ these substructures as an array under the field substructures%
 ...
 }
 \end{lstlisting}
-
+%
 we then also store these substructures in ElasticSearch as follows:
 \begin{lstlisting}[language=json]
 { "conformer_id": 56123a42c134edad2342c, 
@@ -555,7 +565,7 @@ Compounds are collections of conformers. Their representation is very simple:
     ]
 }
 \end{lstlisting}
-
+%
 They are rarely updated and their updates are very easy using \texttt{\$addToSet}.
 
 \subsection{Prediction Feature Data}
@@ -570,8 +580,9 @@ documents in the database that look like this:
     "value_type":"numeric"
 } 
 \end{lstlisting}
-
-a possible query is to ask for a collection of feature values which, in mongodb, is done as follows:
+%
+a possible query is to ask for a collection of feature 
+values which, in mongodb, is done as follows:
 \begin{lstlisting}[language=json]
 db.pred.find( 
     {feature:  
@@ -579,7 +590,7 @@ db.pred.find(
     } 
 ).pretty(); 
 \end{lstlisting}
-
+%
 a relational database stores the feature-value pair \texttt{\_id} of those 
 feature-value pairs that correspond to the predicted features of a dataset. 
 
@@ -595,8 +606,9 @@ It is then easy to see that the most well-fit structure for our mysql DB is:
 \end{figure}
 
 
-Cached Datasets
-A MFU cache is employed to store the most frequently used dataset objects. On top of our implementation, mongodb will keep in RAM some of them.
+\subsection{Cached Datasets}
+A MFU cache is employed to store the most frequently used dataset objects. 
+On top of our implementation, mongodb will keep in RAM some of them.
 
 \subsection{Algorithm}
 
